@@ -5,8 +5,8 @@ const apiUrl = "http://dss-todo-server.herokuapp.com/api";
 const ToDo = React.createClass({
   getInitialState: function() {
     this.state = {};
-    this.state.isDone = this.props.isDone.toString() === "true" ? true : false;
-    return this.state;
+    let isDone_bool = this.props.isDone.toString() === "true" ? true : false;
+    return {isDone: isDone_bool};
   },
   render: function() {
     return (
@@ -70,25 +70,24 @@ const ToDoList = React.createClass({
     } else { return null }
   },
   generateDisplayList: function(arr) {
-    let list = arr.map((o) => {
+    return arr.map((o) => {
       return <ToDo key={o.id} fbKey={o.id} text={o.data.text} isDone={o.data.isDone}></ToDo>
     });
-    return list;
   },
   addTask: function(e) {
     $.ajax({
       url: apiUrl,
       type: "POST",
       contentType: "application/json",
-      data: {"text": $("#newTaskName").val(), "isDone": false},
+      data: JSON.stringify({"text": $("#newTaskName").val(), "isDone": false}),
       success: (res) => {
-        let foo = [];
-        if (res.data !== null) {  // res.data will be null if database is empty
-          Object.keys(res.data).forEach((key) => {
-            foo.push({id: key, data: res.data[key]})
-          });
-        }
-        this.setState({list: foo.reverse()});  // newest entries are first in list
+        let newArray = this.state.list;
+        newArray.unshift({
+          "id": res.data.key,
+          "data": { "isDone": res.data.isDone,
+                    "text": res.data.text }
+        });
+        this.setState({list: newArray});  // setState triggers new render
       },
       error: (jqXHR, textStatus, errorThrown) => {
         console.log(textStatus, errorThrown);
